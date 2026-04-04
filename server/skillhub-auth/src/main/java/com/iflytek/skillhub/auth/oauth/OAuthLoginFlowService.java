@@ -11,13 +11,16 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +47,6 @@ public class OAuthLoginFlowService {
     }
 
     public AuthenticatedLoginContext loadLoginContext(OAuth2UserRequest request) {
-        OAuth2User upstreamUser = delegate.loadUser(request);
         String registrationId = request.getClientRegistration().getRegistrationId();
 
         OAuthClaimsExtractor extractor = extractors.get(registrationId);
@@ -53,6 +55,16 @@ public class OAuthLoginFlowService {
                     new OAuth2Error("unsupported_provider", "Unsupported: " + registrationId, null)
             );
         }
+
+        // Providers whose extractors fetch user info directly from provider APIs
+        // (e.g. Feishu wraps its response in an envelope) should not go through
+        // DefaultOAuth2UserService, which expects a flat user-info response.
+        OAuth2User upstreamUser = extractor.requiresDefaultUserInfo()
+                ? delegate.loadUser(request)
+                : new DefaultOAuth2User(
+                        Set.of(new SimpleGrantedAuthority("ROLE_USER")),
+                        Map.of("sub", registrationId),
+                        "sub");
 
         OAuthClaims claims = extractor.extract(request, upstreamUser);
         AccessDecision decision = accessPolicy.evaluate(claims);
@@ -68,7 +80,7 @@ public class OAuthLoginFlowService {
         }
 
         PlatformPrincipal principal = identityBindingService.bindOrCreate(claims, UserStatus.ACTIVE);
-        return new AuthenticatedLoginContext(upstreamUser, principal);
+        return new AuthenticatedLoginContext(upstreamUser, principal, claims);
     }
 
     public void rememberReturnTo(HttpServletRequest request) {
@@ -107,6 +119,6 @@ public class OAuthLoginFlowService {
         return null;
     }
 
-    public record AuthenticatedLoginContext(OAuth2User upstreamUser, PlatformPrincipal principal) {
+    public record AuthenticatedLoginContext(OAuth2User upstreamUser, PlatformPrincipal principal, OAuthClaims claims) {
     }
 }

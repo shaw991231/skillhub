@@ -9,6 +9,8 @@ server:
         http-only: true
         secure: ${SESSION_COOKIE_SECURE:false}
         same-site: lax
+        domain: ${SESSION_COOKIE_DOMAIN:}
+        path: /
 
 spring:
   messages:
@@ -54,9 +56,21 @@ spring:
             client-id: ${OAUTH2_GITHUB_CLIENT_ID:placeholder}
             client-secret: ${OAUTH2_GITHUB_CLIENT_SECRET:placeholder}
             scope: read:user,user:email
+          feishu:
+            client-id: ${FEISHU_APP_ID:cli_a945d5bc89bbdcb6}
+            client-secret: ${FEISHU_APP_SECRET:nTnodfjqrJmoTTXy0nwzzg8qhac45r5c}
+            client-name: 飞书
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/feishu"
+            scope: contact:user.email:readonly
         provider:
           github:
             user-info-uri: https://api.github.com/user
+          feishu:
+            authorization-uri: https://open.feishu.cn/open-apis/authen/v1/authorize
+            token-uri: https://open.feishu.cn/open-apis/authen/v1/oidc/access_token
+            user-info-uri: https://open.feishu.cn/open-apis/authen/v1/user_info
+            user-name-attribute: name
   servlet:
     multipart:
       max-file-size: 100MB
@@ -70,6 +84,8 @@ skillhub:
       enabled: ${SKILLHUB_AUTH_DIRECT_ENABLED:false}
     session-bootstrap:
       enabled: ${SKILLHUB_AUTH_SESSION_BOOTSTRAP_ENABLED:false}
+    github:
+      visible: ${GITHUB_AUTH_VISIBLE:false}
   public:
     base-url: ${SKILLHUB_PUBLIC_BASE_URL:}
   access-policy:
@@ -158,6 +174,9 @@ skillhub:
       reclaim-min-idle: ${SKILLHUB_SCAN_STREAM_RECLAIM_MIN_IDLE:PT2M}
       reclaim-batch-size: ${SKILLHUB_SCAN_STREAM_RECLAIM_BATCH_SIZE:20}
       reclaim-interval: ${SKILLHUB_SCAN_STREAM_RECLAIM_INTERVAL:PT30S}
+  feishu:
+    app-id: ${FEISHU_APP_ID:placeholder}
+    app-secret: ${FEISHU_APP_SECRET:placeholder}
   bootstrap:
     admin:
       enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}

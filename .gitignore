@@ -58,6 +58,9 @@ node_modules/
 *.tsbuildinfo
 package-lock.json
 
+# Generated frontend bundle copied into Spring static resources
+server/skillhub-app/src/main/resources/static/
+
 # Playwright
 **/.playwright/
 **/playwright-report/

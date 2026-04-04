@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
+const mockNavigate = vi.fn()
+const mockUseSearch = vi.fn(() => ({ returnTo: '' }))
+const loginButtonSpy = vi.fn()
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: unknown }) => children,
-  useNavigate: () => vi.fn(),
-  useSearch: () => ({ returnTo: '' }),
+  useNavigate: () => mockNavigate,
+  useSearch: () => mockUseSearch(),
 }))
 
 vi.mock('react-i18next', async () => {
@@ -27,7 +31,10 @@ vi.mock('@/api/client', () => ({
 }))
 
 vi.mock('@/features/auth/login-button', () => ({
-  LoginButton: () => null,
+  LoginButton: ({ returnTo }: { returnTo?: string }) => {
+    loginButtonSpy(returnTo)
+    return null
+  },
 }))
 
 vi.mock('@/features/auth/session-bootstrap-entry', () => ({
@@ -65,6 +72,14 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { LoginPage } from './login'
 
 describe('LoginPage', () => {
+  it('preserves absolute localhost returnTo for OAuth login in development', () => {
+    mockUseSearch.mockReturnValueOnce({ returnTo: 'http://localhost:3000/dashboard/publish?draft=1' })
+
+    renderToStaticMarkup(<LoginPage />)
+
+    expect(loginButtonSpy).toHaveBeenLastCalledWith('http://localhost:3000/dashboard/publish?draft=1')
+  })
+
   it('exports a named component function', () => {
     expect(typeof LoginPage).toBe('function')
   })

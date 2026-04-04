@@ -22,6 +22,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Translates application, domain, auth, and infrastructure exceptions into the platform's JSON API
@@ -123,6 +124,21 @@ public class GlobalExceptionHandler {
         logHandledException(HttpStatus.REQUEST_TIMEOUT, "error.request.timeout", request);
         return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(
                 apiResponseFactory.error(408, "error.request.timeout"));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // 对于前端 SPA 路由（如 /dashboard），返回 404 而不是 500
+        // 这样前端可以正确处理路由，或者浏览器显示标准 404
+        logger.debug(
+                "Static resource not found [requestId={}, path={}, userId={}]",
+                MDC.get("requestId"),
+                path,
+                resolveUserId(request)
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                apiResponseFactory.error(404, "error.notFound"));
     }
 
     @ExceptionHandler(Exception.class)

@@ -6,6 +6,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -57,6 +58,45 @@ class OAuth2LoginHandlersTest {
         assertThat(session.getAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE)).isNull();
         assertThat(session.getAttribute("platformPrincipal")).isEqualTo(principal);
         assertThat(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)).isNotNull();
+        SecurityContext securityContext = (SecurityContext) session.getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY
+        );
+        assertThat(securityContext.getAuthentication().getPrincipal()).isEqualTo(principal);
+    }
+
+    @Test
+    void successHandler_withoutStoredReturnTo_stillPersistsPlatformSession() throws Exception {
+        OAuthLoginFlowService oauthLoginFlowService = mock(OAuthLoginFlowService.class);
+        OAuth2LoginSuccessHandler handler = new OAuth2LoginSuccessHandler(
+                new com.iflytek.skillhub.auth.session.PlatformSessionService(),
+                oauthLoginFlowService
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        var principal = new com.iflytek.skillhub.auth.rbac.PlatformPrincipal(
+                "user-2", "User2", "user2@example.com", null, "feishu", Set.of("USER")
+        );
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                new DefaultOAuth2User(List.of(), Map.of("platformPrincipal", principal, "login", "user2"), "login"),
+                null,
+                List.of()
+        );
+
+        org.mockito.Mockito.when(oauthLoginFlowService.consumeReturnTo(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(null);
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        assertThat(response.getRedirectedUrl()).isEqualTo("/dashboard");
+        HttpSession session = request.getSession(false);
+        assertThat(session).isNotNull();
+        assertThat(session.getAttribute("platformPrincipal")).isEqualTo(principal);
+        SecurityContext securityContext = (SecurityContext) session.getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY
+        );
+        assertThat(securityContext).isNotNull();
+        assertThat(securityContext.getAuthentication().getPrincipal()).isEqualTo(principal);
     }
 
     @Test

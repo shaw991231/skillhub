@@ -45,7 +45,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.security.oauth2.client.provider.gitee.authorization-uri=https://gitee.com/oauth/authorize",
     "spring.security.oauth2.client.provider.gitee.token-uri=https://gitee.com/oauth/token",
     "spring.security.oauth2.client.provider.gitee.user-info-uri=https://gitee.com/api/v5/user",
-    "spring.security.oauth2.client.provider.gitee.user-name-attribute=id"
+    "spring.security.oauth2.client.provider.gitee.user-name-attribute=id",
+    "skillhub.auth.github.visible=true"
 })
 class AuthControllerTest {
 
@@ -142,9 +143,10 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/v1/auth/providers"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
-            .andExpect(jsonPath("$.data.length()").value(2))
-            .andExpect(jsonPath("$.data[*].id", hasItems("github", "gitee")))
+            .andExpect(jsonPath("$.data.length()").value(3))
+            .andExpect(jsonPath("$.data[*].id", hasItems("feishu", "github", "gitee")))
             .andExpect(jsonPath("$.data[*].authorizationUrl", hasItems(
+                "/oauth2/authorization/feishu",
                 "/oauth2/authorization/github",
                 "/oauth2/authorization/gitee"
             )))
@@ -158,6 +160,7 @@ class AuthControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
             .andExpect(jsonPath("$.data[*].authorizationUrl", hasItems(
+                "/oauth2/authorization/feishu?returnTo=%2Fdashboard%2Fpublish",
                 "/oauth2/authorization/github?returnTo=%2Fdashboard%2Fpublish",
                 "/oauth2/authorization/gitee?returnTo=%2Fdashboard%2Fpublish"
             )));
@@ -168,7 +171,7 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/v1/auth/methods").param("returnTo", "/dashboard/publish"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
-            .andExpect(jsonPath("$.data[*].id", hasItems("local-password", "oauth-github", "oauth-gitee")))
+            .andExpect(jsonPath("$.data[*].id", hasItems("local-password", "oauth-feishu", "oauth-github", "oauth-gitee")))
             .andExpect(jsonPath("$.data[?(@.id=='local-password')].methodType").value(hasItems("PASSWORD")))
             .andExpect(jsonPath("$.data[?(@.id=='oauth-github')].actionUrl")
                 .value(hasItems("/oauth2/authorization/github?returnTo=%2Fdashboard%2Fpublish")));

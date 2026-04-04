@@ -52,6 +52,15 @@ export { ApiError }
 
 export const WEB_API_PREFIX = '/api/web'
 
+type AuthProviderVisibilityConfig = {
+  visible?: boolean
+}
+
+type AuthProvidersRuntimeConfig = {
+  feishu?: AuthProviderVisibilityConfig
+  github?: AuthProviderVisibilityConfig
+}
+
 type RuntimeConfig = {
   apiBaseUrl?: string
   appBaseUrl?: string
@@ -60,6 +69,7 @@ type RuntimeConfig = {
   authSessionBootstrapEnabled?: string
   authSessionBootstrapProvider?: string
   authSessionBootstrapAuto?: string
+  authProviders?: AuthProvidersRuntimeConfig
 }
 
 declare global {
@@ -160,6 +170,20 @@ export function getSessionBootstrapRuntimeConfig(): SessionBootstrapRuntimeConfi
   }
 }
 
+export type AuthProvidersRuntimeConfigResult = {
+  feishu: { visible: boolean }
+  github: { visible: boolean }
+}
+
+export function getAuthProvidersRuntimeConfig(): AuthProvidersRuntimeConfigResult {
+  const config = getRuntimeConfig()
+  const providers = config.authProviders
+  return {
+    feishu: { visible: providers?.feishu?.visible ?? true },
+    github: { visible: providers?.github?.visible ?? true },
+  }
+}
+
 type ApiEnvelope<T> = {
   code: number
   msg: string
@@ -208,6 +232,7 @@ export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestWithT
       ...init,
       signal,
       headers: withRequestHeaders(init?.headers),
+      credentials: 'include',
     })
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -240,6 +265,7 @@ export async function fetchText(input: RequestInfo | URL, init?: RequestInit): P
   const response = await fetch(withBaseUrl(input), {
     ...init,
     headers: withRequestHeaders(init?.headers),
+    credentials: 'include',
   })
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`)
@@ -349,6 +375,7 @@ export const authApi = {
     const response = await fetch('/api/v1/auth/logout', {
       method: 'POST',
       headers: withCsrf(),
+      credentials: 'include',
     })
     if (response.status !== 200 && response.status !== 204) {
       throw new Error(`HTTP ${response.status}`)

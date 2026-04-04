@@ -3,5 +3,6 @@ package com.iflytek.skillhub.dto;
 public record AuthProviderResponse(
         String id,
         String name,
-        String authorizationUrl
+        String authorizationUrl,
+        boolean hidden
 ) {}

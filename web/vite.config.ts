@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { createDevServerProxy } from './dev-proxy-config'
 
 export default defineConfig({
   plugins: [react()],
@@ -18,15 +19,6 @@ export default defineConfig({
       usePolling: true,
       interval: 150,
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/oauth2': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
+    proxy: createDevServerProxy(),
   },
 })

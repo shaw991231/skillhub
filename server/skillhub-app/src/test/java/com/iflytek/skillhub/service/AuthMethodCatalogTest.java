@@ -63,7 +63,8 @@ class AuthMethodCatalogTest {
             directAuthProperties,
             bootstrapProperties,
             List.of(directProvider),
-            List.of(bootstrapProvider)
+            List.of(bootstrapProvider),
+            true
         );
 
         assertThat(catalog.listMethods(null))
@@ -112,7 +113,8 @@ class AuthMethodCatalogTest {
             directAuthProperties,
             bootstrapProperties,
             List.of(directProvider),
-            List.of(bootstrapProvider)
+            List.of(bootstrapProvider),
+            true
         );
 
         assertThat(catalog.listMethods(null))

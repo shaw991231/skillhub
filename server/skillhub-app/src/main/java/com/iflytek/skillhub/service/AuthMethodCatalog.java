@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.stereotype.Service;
 
@@ -27,17 +28,20 @@ public class AuthMethodCatalog {
     private final AuthSessionBootstrapProperties sessionBootstrapProperties;
     private final List<DirectAuthProvider> directAuthProviders;
     private final List<PassiveSessionAuthenticator> passiveSessionAuthenticators;
+    private final boolean githubVisible;
 
     public AuthMethodCatalog(OAuth2ClientProperties oAuth2ClientProperties,
                              DirectAuthProperties directAuthProperties,
                              AuthSessionBootstrapProperties sessionBootstrapProperties,
                              List<DirectAuthProvider> directAuthProviders,
-                             List<PassiveSessionAuthenticator> passiveSessionAuthenticators) {
+                             List<PassiveSessionAuthenticator> passiveSessionAuthenticators,
+                             @Value("${skillhub.auth.github.visible:${GITHUB_AUTH_VISIBLE:false}}") boolean githubVisible) {
         this.oAuth2ClientProperties = oAuth2ClientProperties;
         this.directAuthProperties = directAuthProperties;
         this.sessionBootstrapProperties = sessionBootstrapProperties;
         this.directAuthProviders = directAuthProviders;
         this.passiveSessionAuthenticators = passiveSessionAuthenticators;
+        this.githubVisible = githubVisible;
     }
 
     public List<AuthProviderResponse> listOAuthProviders(String returnTo) {
@@ -49,7 +53,8 @@ public class AuthMethodCatalog {
                 entry.getValue().getClientName() != null && !entry.getValue().getClientName().isBlank()
                     ? entry.getValue().getClientName()
                     : entry.getKey(),
-                buildAuthorizationUrl(entry.getKey(), sanitizedReturnTo)
+                buildAuthorizationUrl(entry.getKey(), sanitizedReturnTo),
+                !githubVisible && "github".equals(entry.getKey())
             ))
             .toList());
     }
@@ -63,7 +68,8 @@ public class AuthMethodCatalog {
             "PASSWORD",
             "local",
             "Local Account",
-            "/api/v1/auth/local/login"
+            "/api/v1/auth/local/login",
+            false
         ));
 
         oAuth2ClientProperties.getRegistration().entrySet().stream()
@@ -75,7 +81,8 @@ public class AuthMethodCatalog {
                 entry.getValue().getClientName() != null && !entry.getValue().getClientName().isBlank()
                     ? entry.getValue().getClientName()
                     : entry.getKey(),
-                buildAuthorizationUrl(entry.getKey(), sanitizedReturnTo)
+                buildAuthorizationUrl(entry.getKey(), sanitizedReturnTo),
+                !githubVisible && "github".equals(entry.getKey())
             )));
 
         if (directAuthProperties.isEnabled()) {
@@ -86,7 +93,8 @@ public class AuthMethodCatalog {
                     "DIRECT_PASSWORD",
                     provider.providerCode(),
                     provider.displayName(),
-                    "/api/v1/auth/direct/login"
+                    "/api/v1/auth/direct/login",
+                    false
                 )));
         }
 
@@ -98,7 +106,8 @@ public class AuthMethodCatalog {
                     "SESSION_BOOTSTRAP",
                     provider.providerCode(),
                     provider.displayName(),
-                    "/api/v1/auth/session/bootstrap"
+                    "/api/v1/auth/session/bootstrap",
+                    false
                 )));
         }
 

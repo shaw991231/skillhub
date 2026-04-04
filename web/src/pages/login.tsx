@@ -11,6 +11,34 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
+function resolveLoginReturnTargets(rawReturnTo: string | undefined) {
+  const fallback = '/dashboard'
+  if (!rawReturnTo) {
+    return { appReturnTo: fallback, oauthReturnTo: fallback }
+  }
+
+  if (rawReturnTo.startsWith('/')) {
+    return { appReturnTo: rawReturnTo, oauthReturnTo: rawReturnTo }
+  }
+
+  try {
+    const parsed = new URL(rawReturnTo)
+    const isDevFrontend =
+      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') && parsed.port === '3000'
+
+    if (isDevFrontend && parsed.pathname.startsWith('/')) {
+      return {
+        appReturnTo: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+        oauthReturnTo: rawReturnTo,
+      }
+    }
+  } catch {
+    // Fall back to the default dashboard when returnTo is not a safe URL.
+  }
+
+  return { appReturnTo: fallback, oauthReturnTo: fallback }
+}
+
 /**
  * Authentication entry page.
  *
@@ -29,8 +57,7 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<{ username?: string, password?: string }>({})
   const isChinese = i18n.resolvedLanguage?.split('-')[0] === 'zh'
   const { data: authMethods } = useAuthMethods(search.returnTo)
-
-  const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
+  const { appReturnTo, oauthReturnTo } = resolveLoginReturnTargets(search.returnTo)
   const disabledMessage = search.reason === 'accountDisabled' ? t('apiError.auth.accountDisabled') : null
   const directMethod = directAuthConfig.provider
     ? authMethods?.find((method) =>
@@ -57,7 +84,7 @@ export function LoginPage() {
     setFieldErrors({})
     try {
       await loginMutation.mutateAsync({ username: trimmedUsername, password })
-      await navigate({ to: returnTo })
+      await navigate({ to: appReturnTo })
     } catch {
       // mutation state drives the error UI
     }
@@ -85,7 +112,7 @@ export function LoginPage() {
             ) : null}
             <SessionBootstrapEntry
               methodDisplayName={bootstrapMethod?.displayName}
-              onAuthenticated={() => navigate({ to: returnTo })}
+              onAuthenticated={() => navigate({ to: appReturnTo })}
             />
 
             <Tabs defaultValue="password" className="space-y-6">
@@ -165,7 +192,7 @@ export function LoginPage() {
                     {' '}
                     <Link
                       to="/register"
-                      search={{ returnTo }}
+                      search={{ returnTo: appReturnTo }}
                       className="font-medium text-primary hover:underline"
                     >
                       {t('login.register')}
@@ -178,7 +205,7 @@ export function LoginPage() {
                 <p className="text-sm text-muted-foreground">
                   {t('login.oauthHint')}
                 </p>
-                <LoginButton returnTo={returnTo} />
+                <LoginButton returnTo={oauthReturnTo} />
               </TabsContent>
             </Tabs>
           </div>
