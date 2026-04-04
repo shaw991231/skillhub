@@ -1,14 +1,34 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { isRedirect } from '@tanstack/react-router'
 import { buildReturnTo, createRequireAuth } from './auth-route'
 
 describe('auth-route', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('buildReturnTo preserves pathname search and hash', () => {
     expect(buildReturnTo({
       pathname: '/space/global/caldav-calendar',
       searchStr: '?tab=files',
       hash: '#readme',
     })).toBe('/space/global/caldav-calendar?tab=files#readme')
+  })
+
+  it('buildReturnTo keeps the active dev loopback origin instead of forcing localhost', () => {
+    vi.stubGlobal('window', {
+      location: {
+        origin: 'http://127.0.0.1:3000',
+        hostname: '127.0.0.1',
+        port: '3000',
+      },
+    })
+
+    expect(buildReturnTo({
+      pathname: '/dashboard/publish',
+      searchStr: '?draft=1',
+      hash: '#summary',
+    })).toBe('http://127.0.0.1:3000/dashboard/publish?draft=1#summary')
   })
 
   it('createRequireAuth redirects unauthenticated users to login with returnTo', async () => {

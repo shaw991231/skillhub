@@ -33,6 +33,24 @@ class OAuthLoginFlowServiceTest {
     }
 
     @Test
+    void rememberReturnTo_accepts_loopback_frontend_url() {
+        OAuthLoginFlowService service = new OAuthLoginFlowService(
+                List.of(),
+                mock(AccessPolicy.class),
+                mock(IdentityBindingService.class)
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("returnTo", "http://127.0.0.1:3000/dashboard/publish?draft=1");
+
+        service.rememberReturnTo(request);
+
+        HttpSession session = request.getSession(false);
+        assertThat(session).isNotNull();
+        assertThat(session.getAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE))
+                .isEqualTo("http://127.0.0.1:3000/dashboard/publish?draft=1");
+    }
+
+    @Test
     void resolveFailureRedirect_maps_access_denied_to_user_facing_page() {
         OAuthLoginFlowService service = new OAuthLoginFlowService(
                 List.of(),
@@ -58,6 +76,26 @@ class OAuthLoginFlowServiceTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         HttpSession session = request.getSession(true);
         session.setAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE, "https://evil.example");
+
+        String returnTo = service.consumeReturnTo(session);
+
+        assertThat(returnTo).isNull();
+        assertThat(session.getAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE)).isNull();
+    }
+
+    @Test
+    void consumeReturnTo_rejects_spoofed_dev_frontend_host() {
+        OAuthLoginFlowService service = new OAuthLoginFlowService(
+                List.of(),
+                mock(AccessPolicy.class),
+                mock(IdentityBindingService.class)
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        HttpSession session = request.getSession(true);
+        session.setAttribute(
+                OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE,
+                "http://localhost:3000.evil.example/dashboard"
+        );
 
         String returnTo = service.consumeReturnTo(session);
 
