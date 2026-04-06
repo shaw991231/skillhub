@@ -78,6 +78,8 @@ spring:
 
 skillhub:
   auth:
+    local:
+      enabled: ${SKILLHUB_AUTH_LOCAL_ENABLED:false}
     mock:
       enabled: ${SKILLHUB_AUTH_MOCK_ENABLED:false}
     direct:

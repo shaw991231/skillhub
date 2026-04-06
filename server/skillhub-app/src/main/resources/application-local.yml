@@ -25,6 +25,8 @@ spring:
 
 skillhub:
   auth:
+    local:
+      enabled: false
     mock:
       enabled: true
   notification:

@@ -1,7 +1,8 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LoginButton } from '@/features/auth/login-button'
+import { useAuthMethods } from '@/features/auth/use-auth-methods'
 import { useLocalRegister } from '@/features/auth/use-local-auth'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -21,6 +22,18 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
 
   const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
+  const { data: authMethods } = useAuthMethods(returnTo)
+  const hasLocalPassword = authMethods?.some((method: { id: string }) => method.id === 'local-password') ?? false
+
+  useEffect(() => {
+    if (authMethods && !hasLocalPassword) {
+      navigate({ to: '/login', search: { returnTo } })
+    }
+  }, [authMethods, hasLocalPassword, navigate, returnTo])
+
+  if (!authMethods || !hasLocalPassword) {
+    return null
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

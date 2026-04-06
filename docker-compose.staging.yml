@@ -34,12 +34,6 @@ services:
       SKILLHUB_STORAGE_S3_REGION: us-east-1
       SKILLHUB_STORAGE_S3_FORCE_PATH_STYLE: "true"
       SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET: "true"
-      BOOTSTRAP_ADMIN_ENABLED: "true"
-      BOOTSTRAP_ADMIN_USER_ID: staging-admin
-      BOOTSTRAP_ADMIN_USERNAME: admin
-      BOOTSTRAP_ADMIN_PASSWORD: "Admin@staging2026"
-      BOOTSTRAP_ADMIN_DISPLAY_NAME: Admin
-      BOOTSTRAP_ADMIN_EMAIL: admin@skillhub.local
       OAUTH2_GITHUB_CLIENT_ID: local-placeholder
       OAUTH2_GITHUB_CLIENT_SECRET: local-placeholder
     depends_on:

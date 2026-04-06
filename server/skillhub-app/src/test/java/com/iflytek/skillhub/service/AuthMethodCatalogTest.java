@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import com.iflytek.skillhub.auth.bootstrap.PassiveSessionAuthenticator;
 import com.iflytek.skillhub.auth.direct.DirectAuthProvider;
 import com.iflytek.skillhub.auth.direct.DirectAuthRequest;
+import com.iflytek.skillhub.auth.local.LocalAuthProperties;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.config.AuthSessionBootstrapProperties;
 import com.iflytek.skillhub.config.DirectAuthProperties;
@@ -58,8 +59,12 @@ class AuthMethodCatalogTest {
             }
         };
 
+        LocalAuthProperties localAuthProperties = new LocalAuthProperties();
+        localAuthProperties.setEnabled(true);
+
         AuthMethodCatalog catalog = new AuthMethodCatalog(
             oauthProperties,
+            localAuthProperties,
             directAuthProperties,
             bootstrapProperties,
             List.of(directProvider),
@@ -108,8 +113,12 @@ class AuthMethodCatalogTest {
             }
         };
 
+        LocalAuthProperties localAuthProperties = new LocalAuthProperties();
+        localAuthProperties.setEnabled(true);
+
         AuthMethodCatalog catalog = new AuthMethodCatalog(
             oauthProperties,
+            localAuthProperties,
             directAuthProperties,
             bootstrapProperties,
             List.of(directProvider),

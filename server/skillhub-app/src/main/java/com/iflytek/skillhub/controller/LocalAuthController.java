@@ -1,5 +1,7 @@
 package com.iflytek.skillhub.controller;
 
+import com.iflytek.skillhub.auth.local.LocalAuthDisabledException;
+import com.iflytek.skillhub.auth.local.LocalAuthProperties;
 import com.iflytek.skillhub.auth.local.LocalAuthService;
 import com.iflytek.skillhub.auth.exception.AuthFlowException;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
@@ -30,27 +32,37 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth/local")
 public class LocalAuthController extends BaseApiController {
 
+    private final LocalAuthProperties localAuthProperties;
     private final LocalAuthService localAuthService;
     private final SkillHubMetrics skillHubMetrics;
     private final PlatformSessionService platformSessionService;
     private final AuthFailureThrottleService authFailureThrottleService;
 
     public LocalAuthController(ApiResponseFactory responseFactory,
+                               LocalAuthProperties localAuthProperties,
                                LocalAuthService localAuthService,
                                SkillHubMetrics skillHubMetrics,
                                PlatformSessionService platformSessionService,
                                AuthFailureThrottleService authFailureThrottleService) {
         super(responseFactory);
+        this.localAuthProperties = localAuthProperties;
         this.localAuthService = localAuthService;
         this.skillHubMetrics = skillHubMetrics;
         this.platformSessionService = platformSessionService;
         this.authFailureThrottleService = authFailureThrottleService;
     }
 
+    private void ensureLocalAuthEnabled() {
+        if (!localAuthProperties.isEnabled()) {
+            throw new LocalAuthDisabledException();
+        }
+    }
+
     @PostMapping("/register")
     @RateLimit(category = "auth-register", authenticated = 10, anonymous = 5, windowSeconds = 300)
     public ApiResponse<AuthMeResponse> register(@Valid @RequestBody LocalRegisterRequest request,
                                                 HttpServletRequest httpRequest) {
+        ensureLocalAuthEnabled();
         PlatformPrincipal principal = localAuthService.register(request.username(), request.password(), request.email());
         skillHubMetrics.incrementUserRegister();
         platformSessionService.establishSession(principal, httpRequest);
@@ -61,6 +73,7 @@ public class LocalAuthController extends BaseApiController {
     @RateLimit(category = "auth-local-login", authenticated = 20, anonymous = 10, windowSeconds = 60)
     public ApiResponse<AuthMeResponse> login(@Valid @RequestBody LocalLoginRequest request,
                                              HttpServletRequest httpRequest) {
+        ensureLocalAuthEnabled();
         authFailureThrottleService.assertAllowed("local", request.username(), resolveClientIp(httpRequest));
         PlatformPrincipal principal;
         try {
@@ -85,6 +98,7 @@ public class LocalAuthController extends BaseApiController {
     @RateLimit(category = "auth-change-password", authenticated = 5, anonymous = 20, windowSeconds = 300)
     public ApiResponse<Void> changePassword(@AuthenticationPrincipal PlatformPrincipal principal,
                                             @Valid @RequestBody ChangePasswordRequest request) {
+        ensureLocalAuthEnabled();
         if (principal == null) {
             throw new UnauthorizedException("error.auth.required");
         }

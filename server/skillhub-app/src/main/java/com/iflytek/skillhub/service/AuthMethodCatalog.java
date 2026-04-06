@@ -2,6 +2,7 @@ package com.iflytek.skillhub.service;
 
 import com.iflytek.skillhub.auth.bootstrap.PassiveSessionAuthenticator;
 import com.iflytek.skillhub.auth.direct.DirectAuthProvider;
+import com.iflytek.skillhub.auth.local.LocalAuthProperties;
 import com.iflytek.skillhub.auth.oauth.OAuthLoginRedirectSupport;
 import com.iflytek.skillhub.config.AuthSessionBootstrapProperties;
 import com.iflytek.skillhub.config.DirectAuthProperties;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 public class AuthMethodCatalog {
 
     private final OAuth2ClientProperties oAuth2ClientProperties;
+    private final LocalAuthProperties localAuthProperties;
     private final DirectAuthProperties directAuthProperties;
     private final AuthSessionBootstrapProperties sessionBootstrapProperties;
     private final List<DirectAuthProvider> directAuthProviders;
@@ -31,12 +33,14 @@ public class AuthMethodCatalog {
     private final boolean githubVisible;
 
     public AuthMethodCatalog(OAuth2ClientProperties oAuth2ClientProperties,
+                             LocalAuthProperties localAuthProperties,
                              DirectAuthProperties directAuthProperties,
                              AuthSessionBootstrapProperties sessionBootstrapProperties,
                              List<DirectAuthProvider> directAuthProviders,
                              List<PassiveSessionAuthenticator> passiveSessionAuthenticators,
                              @Value("${skillhub.auth.github.visible:${GITHUB_AUTH_VISIBLE:false}}") boolean githubVisible) {
         this.oAuth2ClientProperties = oAuth2ClientProperties;
+        this.localAuthProperties = localAuthProperties;
         this.directAuthProperties = directAuthProperties;
         this.sessionBootstrapProperties = sessionBootstrapProperties;
         this.directAuthProviders = directAuthProviders;
@@ -63,14 +67,16 @@ public class AuthMethodCatalog {
         String sanitizedReturnTo = OAuthLoginRedirectSupport.sanitizeReturnTo(returnTo);
         List<AuthMethodResponse> methods = new ArrayList<>();
 
-        methods.add(new AuthMethodResponse(
-            "local-password",
-            "PASSWORD",
-            "local",
-            "Local Account",
-            "/api/v1/auth/local/login",
-            false
-        ));
+        if (localAuthProperties.isEnabled()) {
+            methods.add(new AuthMethodResponse(
+                "local-password",
+                "PASSWORD",
+                "local",
+                "Local Account",
+                "/api/v1/auth/local/login",
+                false
+            ));
+        }
 
         oAuth2ClientProperties.getRegistration().entrySet().stream()
             .sorted(Comparator.comparing(entry -> entry.getKey()))

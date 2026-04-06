@@ -64,6 +64,7 @@ export function LoginPage() {
       method.methodType === 'DIRECT_PASSWORD' && method.provider === directAuthConfig.provider)
     : undefined
   const bootstrapMethod = authMethods?.find((method) => method.methodType === 'SESSION_BOOTSTRAP')
+  const hasLocalPassword = authMethods?.some((method) => method.id === 'local-password') ?? false
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -115,99 +116,108 @@ export function LoginPage() {
               onAuthenticated={() => navigate({ to: appReturnTo })}
             />
 
-            <Tabs defaultValue="password" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="password">{t('login.tabPassword')}</TabsTrigger>
-                <TabsTrigger value="oauth">{t('login.tabOAuth')}</TabsTrigger>
-              </TabsList>
+            {hasLocalPassword ? (
+              <Tabs defaultValue="password" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="password">{t('login.tabPassword')}</TabsTrigger>
+                  <TabsTrigger value="oauth">{t('login.tabOAuth')}</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="password">
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                  {directAuthConfig.enabled ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t('login.passwordCompatHint', {
-                        name: directMethod?.displayName ?? directAuthConfig.provider,
-                      })}
-                    </p>
-                  ) : null}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium" htmlFor="username">{t('login.username')}</label>
-                    <Input
-                      id="username"
-                      autoComplete="username"
-                      value={username}
-                      onChange={(event) => {
-                        setUsername(event.target.value)
-                        if (fieldErrors.username) {
-                          setFieldErrors((current) => ({ ...current, username: undefined }))
-                        }
-                      }}
-                      placeholder={t('login.usernamePlaceholder')}
-                      aria-invalid={fieldErrors.username ? 'true' : 'false'}
-                    />
-                    {fieldErrors.username ? (
-                      <p className="text-sm text-red-600">{fieldErrors.username}</p>
+                <TabsContent value="password">
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    {directAuthConfig.enabled ? (
+                      <p className="text-sm text-muted-foreground">
+                        {t('login.passwordCompatHint', {
+                          name: directMethod?.displayName ?? directAuthConfig.provider,
+                        })}
+                      </p>
                     ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium" htmlFor="password">{t('login.password')}</label>
-                    <div className="relative">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="username">{t('login.username')}</label>
                       <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        value={password}
+                        id="username"
+                        autoComplete="username"
+                        value={username}
                         onChange={(event) => {
-                          setPassword(event.target.value)
-                          if (fieldErrors.password) {
-                            setFieldErrors((current) => ({ ...current, password: undefined }))
+                          setUsername(event.target.value)
+                          if (fieldErrors.username) {
+                            setFieldErrors((current) => ({ ...current, username: undefined }))
                           }
                         }}
-                        placeholder={t('login.passwordPlaceholder')}
-                        className="pr-12"
-                        aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                        placeholder={t('login.usernamePlaceholder')}
+                        aria-invalid={fieldErrors.username ? 'true' : 'false'}
                       />
-                      <button
-                        type="button"
-                        aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
-                        aria-pressed={showPassword}
-                        onClick={() => setShowPassword((current) => !current)}
-                        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                      {fieldErrors.username ? (
+                        <p className="text-sm text-red-600">{fieldErrors.username}</p>
+                      ) : null}
                     </div>
-                    {fieldErrors.password ? (
-                      <p className="text-sm text-red-600">{fieldErrors.password}</p>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="password">{t('login.password')}</label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(event) => {
+                            setPassword(event.target.value)
+                            if (fieldErrors.password) {
+                              setFieldErrors((current) => ({ ...current, password: undefined }))
+                            }
+                          }}
+                          placeholder={t('login.passwordPlaceholder')}
+                          className="pr-12"
+                          aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+                          aria-pressed={showPassword}
+                          onClick={() => setShowPassword((current) => !current)}
+                          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {fieldErrors.password ? (
+                        <p className="text-sm text-red-600">{fieldErrors.password}</p>
+                      ) : null}
+                    </div>
+                    {loginMutation.error ? (
+                      <p className="text-sm text-red-600">{loginMutation.error.message}</p>
                     ) : null}
-                  </div>
-                  {loginMutation.error ? (
-                    <p className="text-sm text-red-600">{loginMutation.error.message}</p>
-                  ) : null}
-                  <Button className="w-full" disabled={loginMutation.isPending} type="submit">
-                    {loginMutation.isPending ? t('login.submitting') : t('login.submit')}
-                  </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    {t('login.noAccount')}
-                    {' '}
-                    <Link
-                      to="/register"
-                      search={{ returnTo: appReturnTo }}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {t('login.register')}
-                    </Link>
-                  </p>
-                </form>
-              </TabsContent>
+                    <Button className="w-full" disabled={loginMutation.isPending} type="submit">
+                      {loginMutation.isPending ? t('login.submitting') : t('login.submit')}
+                    </Button>
+                    <p className="text-center text-sm text-muted-foreground">
+                      {t('login.noAccount')}
+                      {' '}
+                      <Link
+                        to="/register"
+                        search={{ returnTo: appReturnTo }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {t('login.register')}
+                      </Link>
+                    </p>
+                  </form>
+                </TabsContent>
 
-              <TabsContent value="oauth" className="space-y-4">
+                <TabsContent value="oauth" className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    {t('login.oauthHint')}
+                  </p>
+                  <LoginButton returnTo={oauthReturnTo} />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   {t('login.oauthHint')}
                 </p>
                 <LoginButton returnTo={oauthReturnTo} />
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
         </div>
 
