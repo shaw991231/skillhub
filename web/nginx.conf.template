@@ -27,6 +27,7 @@ server {
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
     }
 
     location /login/oauth2/ {
@@ -34,12 +35,14 @@ server {
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
     }
 
     location /.well-known/ {
         proxy_pass ${SKILLHUB_API_UPSTREAM};
         proxy_set_header Host $http_host;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
     }
 
     location /assets/ {
