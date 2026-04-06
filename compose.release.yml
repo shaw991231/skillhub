@@ -74,6 +74,13 @@ services:
       SKILLHUB_SECURITY_SCANNER_MODE: upload
       OAUTH2_GITHUB_CLIENT_ID: ${OAUTH2_GITHUB_CLIENT_ID:-local-placeholder}
       OAUTH2_GITHUB_CLIENT_SECRET: ${OAUTH2_GITHUB_CLIENT_SECRET:-local-placeholder}
+      FEISHU_APP_ID: ${FEISHU_APP_ID:-placeholder}
+      FEISHU_APP_SECRET: ${FEISHU_APP_SECRET:-placeholder}
+      SKILLHUB_AUTH_LOCAL_ENABLED: ${SKILLHUB_AUTH_LOCAL_ENABLED:-false}
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
+      BOOTSTRAP_ADMIN_USER_ID: ${BOOTSTRAP_ADMIN_USER_ID:-docker-admin}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-ChangeMe!2026}
     volumes:
       - skillhub_storage:/var/lib/skillhub/storage
     depends_on:
@@ -97,6 +104,7 @@ services:
       SKILLHUB_API_UPSTREAM: ${SKILLHUB_API_UPSTREAM:-http://server:8080}
       SKILLHUB_WEB_API_BASE_URL: ${SKILLHUB_WEB_API_BASE_URL:-}
       SKILLHUB_PUBLIC_BASE_URL: ${SKILLHUB_PUBLIC_BASE_URL:-}
+      GITHUB_AUTH_VISIBLE: ${GITHUB_AUTH_VISIBLE:-false}
     depends_on:
       server:
         condition: service_healthy

@@ -5,7 +5,7 @@ set -eu
 : "${SKILLHUB_PUBLIC_BASE_URL:=}"
 
 # Generate runtime-config.js
-envsubst '${SKILLHUB_WEB_API_BASE_URL} ${SKILLHUB_PUBLIC_BASE_URL}' \
+envsubst '${SKILLHUB_WEB_API_BASE_URL} ${SKILLHUB_PUBLIC_BASE_URL} ${GITHUB_AUTH_VISIBLE}' \
   < /usr/share/nginx/html/runtime-config.js.template \
   > /usr/share/nginx/html/runtime-config.js
 
