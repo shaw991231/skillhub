@@ -8,34 +8,54 @@ description: Install and use skills
 
 ## Install via CLI
 
-### Install Latest Version
-
-```bash
-clawhub install @team/my-skill
-```
-
-### Install Specific Version
-
-```bash
-clawhub install @team/my-skill@1.2.0
-```
-
-### Install by Tag
-
-```bash
-clawhub install @team/my-skill@beta
-```
-
-### Install with ClawHub CLI
+### Install to OpenClaw (Default)
 
 ```bash
 clawhub install my-skill
 clawhub install team-name--my-skill
 ```
 
+### Install to Claude Code
+
+```bash
+# Method 1: Using --dir flag
+clawhub install my-skill --dir ~/.claude/skills
+
+# Method 2: Using CLAWHUB_WORKDIR environment variable
+CLAWHUB_WORKDIR=~/.claude/skills clawhub install my-skill
+```
+
+### Install to Custom Directory
+
+```bash
+clawhub install my-skill --dir /path/to/your/skills
+```
+
+### Install Specific Version
+
+```bash
+clawhub install my-skill@1.2.0
+```
+
+### Install by Tag
+
+```bash
+clawhub install my-skill@beta
+```
+
 ## Installation Directory
 
-Install by the following priority:
+SkillHub supports installing skills to multiple client directories:
+
+| Client | Default Directory | Description |
+|--------|------------------|-------------|
+| **OpenClaw** | `~/.openclaw/skills/` | Default client |
+| **Claude Code** | `~/.claude/skills/` | Claude Code official skill directory |
+| **Custom** | User specified | Any OpenSkills-compatible client |
+
+### Client Discovery Priority
+
+OpenSkills-compatible clients discover skills in the following priority order:
 
 | Priority | Path | Description |
 |----------|------|-------------|
@@ -46,7 +66,45 @@ Install by the following priority:
 
 ## Use in Claude Code
 
-After installation, skills are automatically discovered and loaded by Claude Code.
+After installing to `~/.claude/skills/`, skills are automatically discovered and loaded by Claude Code.
+
+### Verify Installation
+
+```bash
+# List installed Claude Code skills
+ls ~/.claude/skills/
+
+# View specific skill contents
+ls ~/.claude/skills/my-skill/
+```
+
+### Get Install Command from Web UI
+
+Visit the skill detail page to select different client types:
+
+1. Navigate to the skill detail page
+2. Click the "Claude Code" tab
+3. Copy the displayed install command
+4. Execute in your terminal
+
+## Windows Users
+
+### PowerShell
+
+```powershell
+# Install to Claude Code
+clawhub install my-skill --dir "$env:USERPROFILE\.claude\skills"
+
+# Or use environment variable
+$env:CLAWHUB_WORKDIR="$env:USERPROFILE\.claude\skills"
+clawhub install my-skill
+```
+
+### CMD
+
+```cmd
+clawhub install my-skill --dir "%USERPROFILE%\.claude\skills"
+```
 
 ## Next Steps
 

@@ -329,7 +329,18 @@ npx clawhub install my-namespace--my-skill
 npx clawhub publish ./my-skill
 ```
 
-> 💡 **提示**：上述命令不仅适用于 OpenClaw，通过指定安装目录（`--dir`），也可适用于其他的 CLI Coding Agent 或 Agent 助手。例如：`npx clawhub --dir ~/.claude/skills install my-skill`
+**安装到不同客户端**：
+
+```bash
+# 安装到 OpenClaw（默认）
+npx clawhub install my-skill
+
+# 安装到 Claude Code
+npx clawhub install my-skill --dir ~/.claude/skills
+
+# 安装到自定义目录
+npx clawhub install my-skill --dir /path/to/your/skills
+```
 
 📖 **[完整 OpenClaw 集成指南 →](./docs/openclaw-integration.md)**
 

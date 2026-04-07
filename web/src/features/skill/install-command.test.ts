@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { InstallCommand, buildInstallCommand, buildInstallTarget, getBaseUrl } from './install-command'
+import { InstallCommand, buildInstallCommand, buildInstallTarget, getBaseUrl, CLIENTS } from './install-command'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -48,48 +48,102 @@ describe('install-command', () => {
     Reflect.deleteProperty(globalThis, 'window')
   })
 
-  it('uses the plain slug for the global namespace', () => {
-    expect(buildInstallTarget('global', 'my-skill')).toBe('my-skill')
-    expect(buildInstallCommand('global', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx clawhub install my-skill --registry https://skill.xfyun.cn',
-    )
+  describe('buildInstallTarget', () => {
+    it('uses the plain slug for the global namespace', () => {
+      expect(buildInstallTarget('global', 'my-skill')).toBe('my-skill')
+    })
+
+    it('prefixes non-global namespaces in the install target', () => {
+      expect(buildInstallTarget('team-alpha', 'my-skill')).toBe('team-alpha--my-skill')
+    })
   })
 
-  it('prefixes non-global namespaces in the install target', () => {
-    expect(buildInstallTarget('team-alpha', 'my-skill')).toBe('team-alpha--my-skill')
-    expect(buildInstallCommand('team-alpha', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx clawhub install team-alpha--my-skill --registry https://skill.xfyun.cn',
-    )
+  describe('buildInstallCommand', () => {
+    const baseUrl = 'https://skill.xfyun.cn'
+
+    it('generates OpenClaw command without --dir by default', () => {
+      expect(buildInstallCommand('global', 'my-skill', baseUrl, 'openclaw')).toBe(
+        'npx clawhub install my-skill --registry https://skill.xfyun.cn',
+      )
+    })
+
+    it('generates Claude Code command with --dir', () => {
+      expect(buildInstallCommand('global', 'my-skill', baseUrl, 'claude-code')).toBe(
+        'npx clawhub install my-skill --registry https://skill.xfyun.cn --dir ~/.claude/skills',
+      )
+    })
+
+    it('generates command with custom directory', () => {
+      expect(buildInstallCommand('global', 'my-skill', baseUrl, 'openclaw', '~/.custom/skills')).toBe(
+        'npx clawhub install my-skill --registry https://skill.xfyun.cn --dir ~/.custom/skills',
+      )
+    })
+
+    it('handles namespace prefix for team skills', () => {
+      expect(buildInstallCommand('team-alpha', 'my-skill', baseUrl, 'claude-code')).toBe(
+        'npx clawhub install team-alpha--my-skill --registry https://skill.xfyun.cn --dir ~/.claude/skills',
+      )
+    })
   })
 
-  it('uses the runtime app base url when available', () => {
-    setMockWindow('https://app.example.com')
+  describe('getBaseUrl', () => {
+    it('uses the runtime app base url when available', () => {
+      setMockWindow('https://app.example.com')
+      expect(getBaseUrl()).toBe('https://app.example.com')
+    })
 
-    expect(getBaseUrl()).toBe('https://app.example.com')
+    it('falls back to the browser origin when the app base url is missing', () => {
+      setMockWindow()
+      expect(getBaseUrl()).toBe('https://fallback.example.com')
+    })
+
+    it('falls back to browser origin when app base url is localhost', () => {
+      setMockWindow('http://localhost')
+      expect(getBaseUrl()).toBe('https://fallback.example.com')
+    })
+
+    it('falls back to browser origin when app base url contains localhost', () => {
+      setMockWindow('http://localhost:8080')
+      expect(getBaseUrl()).toBe('https://fallback.example.com')
+    })
   })
 
-  it('falls back to the browser origin when the app base url is missing', () => {
-    setMockWindow()
-    expect(getBaseUrl()).toBe('https://fallback.example.com')
+  describe('CLIENTS', () => {
+    it('defines OpenClaw client', () => {
+      const openclaw = CLIENTS.find((c) => c.id === 'openclaw')
+      expect(openclaw).toBeDefined()
+      expect(openclaw?.defaultDir).toBe('~/.openclaw/skills')
+    })
+
+    it('defines Claude Code client', () => {
+      const claudeCode = CLIENTS.find((c) => c.id === 'claude-code')
+      expect(claudeCode).toBeDefined()
+      expect(claudeCode?.defaultDir).toBe('~/.claude/skills')
+    })
   })
 
-  it('falls back to browser origin when app base url is localhost', () => {
-    setMockWindow('http://localhost')
-    expect(getBaseUrl()).toBe('https://fallback.example.com')
-  })
+  describe('InstallCommand component', () => {
+    it('renders the install command in a more compact code block', () => {
+      setMockWindow('http://localhost:3000')
 
-  it('falls back to browser origin when app base url contains localhost', () => {
-    setMockWindow('http://localhost:8080')
-    expect(getBaseUrl()).toBe('https://fallback.example.com')
-  })
+      const html = renderToStaticMarkup(
+        createElement(InstallCommand, { namespace: 'global', slug: 'meeting-minutes-generator' })
+      )
 
-  it('renders the install command in a more compact code block', () => {
-    setMockWindow('http://localhost:3000')
+      expect(html).toContain('px-4 py-3')
+      expect(html).toContain('leading-relaxed')
+      expect(html).toContain('break-all')
+    })
 
-    const html = renderToStaticMarkup(createElement(InstallCommand, { namespace: 'global', slug: 'meeting-minutes-generator' }))
+    it('renders client selector buttons', () => {
+      setMockWindow('http://localhost:3000')
 
-    expect(html).toContain('px-4 py-3')
-    expect(html).toContain('leading-relaxed')
-    expect(html).toContain('break-all')
+      const html = renderToStaticMarkup(
+        createElement(InstallCommand, { namespace: 'global', slug: 'my-skill' })
+      )
+
+      expect(html).toContain('OpenClaw')
+      expect(html).toContain('Claude Code')
+    })
   })
 })
