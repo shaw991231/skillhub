@@ -71,6 +71,15 @@ public final class SkillPackagePolicy {
         return ALLOWED_EXTENSIONS.stream().anyMatch(path::endsWith);
     }
 
+    public static boolean isMacOSMetadata(String path) {
+        if (path.startsWith("__MACOSX/") || path.equals("__MACOSX")) {
+            return true;
+        }
+        int lastSlash = path.lastIndexOf('/');
+        String fileName = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
+        return fileName.startsWith("._") || fileName.equals(".DS_Store");
+    }
+
     public static String validateContentMatchesExtension(String path, byte[] content) {
         String lowerPath = path.toLowerCase();
         if (lowerPath.endsWith(".png")) {

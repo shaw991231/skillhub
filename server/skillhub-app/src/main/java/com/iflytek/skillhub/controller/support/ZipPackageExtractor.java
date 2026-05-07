@@ -3,6 +3,7 @@ package com.iflytek.skillhub.controller.support;
 import com.iflytek.skillhub.config.SkillPublishProperties;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
+import com.iflytek.skillhub.domain.skill.validation.SkillPackagePolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +41,11 @@ public class ZipPackageExtractor {
             ZipEntry zipEntry;
             while ((zipEntry = zis.getNextEntry()) != null) {
                 if (zipEntry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
+
+                if (SkillPackagePolicy.isMacOSMetadata(zipEntry.getName())) {
                     zis.closeEntry();
                     continue;
                 }

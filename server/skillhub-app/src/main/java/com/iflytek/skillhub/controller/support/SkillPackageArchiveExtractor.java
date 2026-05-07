@@ -47,6 +47,11 @@ public class SkillPackageArchiveExtractor {
                     continue;
                 }
 
+                if (SkillPackagePolicy.isMacOSMetadata(zipEntry.getName())) {
+                    zis.closeEntry();
+                    continue;
+                }
+
                 if (entries.size() >= maxFileCount) {
                     throw new IllegalArgumentException(
                             "Too many files: more than " + maxFileCount

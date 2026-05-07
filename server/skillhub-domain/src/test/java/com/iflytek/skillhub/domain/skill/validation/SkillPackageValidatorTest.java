@@ -309,6 +309,20 @@ class SkillPackageValidatorTest {
         assertTrue(result.passed());
     }
 
+    @Test
+    void isMacOSMetadataDetectsAllVariants() {
+        assertTrue(SkillPackagePolicy.isMacOSMetadata("__MACOSX/._SKILL.md"));
+        assertTrue(SkillPackagePolicy.isMacOSMetadata("__MACOSX/code-intel/._EXAMPLES.md"));
+        assertTrue(SkillPackagePolicy.isMacOSMetadata("._somefile"));
+        assertTrue(SkillPackagePolicy.isMacOSMetadata("subdir/._resource"));
+        assertTrue(SkillPackagePolicy.isMacOSMetadata(".DS_Store"));
+        assertTrue(SkillPackagePolicy.isMacOSMetadata("subdir/.DS_Store"));
+
+        assertFalse(SkillPackagePolicy.isMacOSMetadata("SKILL.md"));
+        assertFalse(SkillPackagePolicy.isMacOSMetadata("docs/guide.md"));
+        assertFalse(SkillPackagePolicy.isMacOSMetadata("config.json"));
+    }
+
     private PackageEntry skillMdEntry() {
         String skillMdContent = """
             ---

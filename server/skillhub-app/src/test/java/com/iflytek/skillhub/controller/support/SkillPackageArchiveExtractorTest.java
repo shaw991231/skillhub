@@ -126,6 +126,27 @@ class SkillPackageArchiveExtractorTest {
         assertTrue(entries.stream().anyMatch(e -> e.path().equals("dir-b/other.md")));
     }
 
+    @Test
+    void skipsMacOSMetadataFiles() throws Exception {
+        byte[] zipBytes = createZip(Map.of(
+                "my-skill/SKILL.md", "---\nname: test\n---\n".getBytes(),
+                "my-skill/README.md", "# readme".getBytes(),
+                "__MACOSX/._SKILL.md", "mac metadata".getBytes(),
+                "__MACOSX/my-skill/._README.md", "mac metadata".getBytes(),
+                "my-skill/.DS_Store", "ds store".getBytes(),
+                "my-skill/._hidden", "resource fork".getBytes()
+        ));
+        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", zipBytes);
+        List<PackageEntry> entries = extractor.extract(file);
+
+        assertEquals(2, entries.size());
+        assertTrue(entries.stream().anyMatch(e -> e.path().equals("SKILL.md")));
+        assertTrue(entries.stream().anyMatch(e -> e.path().equals("README.md")));
+        assertTrue(entries.stream().noneMatch(e -> e.path().contains("__MACOSX")));
+        assertTrue(entries.stream().noneMatch(e -> e.path().contains(".DS_Store")));
+        assertTrue(entries.stream().noneMatch(e -> e.path().contains("._")));
+    }
+
     private byte[] createZip(String entryName, String content) throws Exception {
         return createZip(entryName, content.getBytes(StandardCharsets.UTF_8));
     }
