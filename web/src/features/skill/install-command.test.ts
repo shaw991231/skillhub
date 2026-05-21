@@ -84,6 +84,13 @@ describe('install-command', () => {
         'npx clawhub install team-alpha--my-skill --registry https://skill.xfyun.cn --dir ~/.claude/skills',
       )
     })
+
+    it('generates PS-native multi-step command on Windows', () => {
+      const cmd = buildInstallCommand('global', 'my-skill', baseUrl, 'claude-code', undefined, 'windows')
+      expect(cmd).toContain('$env:USERPROFILE/.claude/skills')
+      expect(cmd).toContain('New-Item -ItemType Directory -Force')
+      expect(cmd).toContain('npx clawhub install my-skill --registry https://skill.xfyun.cn')
+    })
   })
 
   describe('getBaseUrl', () => {

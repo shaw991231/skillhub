@@ -58,24 +58,38 @@ export function getBaseUrl(): string {
   return `${window.location.protocol}//${window.location.host}`
 }
 
+function detectPlatform(): string {
+  if (typeof navigator !== 'undefined' && /Win/i.test(navigator.userAgent)) return 'windows'
+  return ''
+}
+
 export function buildInstallCommand(
   namespace: string,
   slug: string,
   baseUrl: string,
   clientType: ClientType = 'openclaw',
-  customDir?: string
+  customDir?: string,
+  platform?: string,
 ): string {
   const installTarget = buildInstallTarget(namespace, slug)
   const client = CLIENTS.find((c) => c.id === clientType)
   const installDir = customDir || client?.defaultDir
+  const base = `npx clawhub install ${installTarget} --registry ${baseUrl}`
+
+  // Windows: generate multi-step PowerShell command to create skills dir first
+  if (platform === 'windows') {
+    const unixDir = installDir || '~/.claude/skills'
+    const psDir = unixDir.startsWith('~') ? `$env:USERPROFILE${unixDir.slice(1)}` : unixDir
+    return `$env:CHDIR="${psDir}"; New-Item -ItemType Directory -Force -Path $env:CHDIR | Out-Null; cd $env:CHDIR; ${base} --dir $env:CHDIR`
+  }
 
   // OpenClaw 使用默认目录时不显示 --dir 参数
   if (clientType === 'openclaw' && !customDir) {
-    return `npx clawhub install ${installTarget} --registry ${baseUrl}`
+    return base
   }
 
   // Claude Code 或自定义目录时显示 --dir 参数
-  return `npx clawhub install ${installTarget} --registry ${baseUrl} --dir ${installDir}`
+  return `${base} --dir ${installDir}`
 }
 
 export function InstallCommand({ namespace, slug }: InstallCommandProps) {
@@ -86,10 +100,11 @@ export function InstallCommand({ namespace, slug }: InstallCommandProps) {
   const [customDir, setCustomDir] = useState('')
 
   const baseUrl = useMemo(() => getBaseUrl(), [])
+  const platform = useMemo(() => detectPlatform(), [])
 
   const command = useMemo(
-    () => buildInstallCommand(namespace, slug, baseUrl, selectedClient, customDir || undefined),
-    [baseUrl, namespace, slug, selectedClient, customDir]
+    () => buildInstallCommand(namespace, slug, baseUrl, selectedClient, customDir || undefined, platform),
+    [baseUrl, namespace, slug, selectedClient, customDir, platform]
   )
 
   const handleCopy = async () => {
